@@ -47,18 +47,25 @@ jobs:
           short_sha="${merge_base:0:7}"                                                                    
           echo "value=main@${short_sha}" >> "$GITHUB_OUTPUT"                                               
 
+      # PX4's build rejects a version that is not a vX.Y.Z tag, and the mirror has no tags.
+      - name: Fetch upstream tags
+        run: git fetch --no-recurse-submodules "https://github.com/${{ vars.UPSTREAM_REPO }}.git" '+refs/tags/*:refs/tags/*'
+        shell: bash -euo pipefail {0}
+
       # @configure: Install build dependencies for your project
       - name: Install dependencies
+        id: image
         run: |
-          echo "TODO: Install your build dependencies here"
-          echo "Example: sudo apt-get install -y build-essential cmake"
+          image=$(sed -n 's/^  default: "\(.*\)"$/\1/p' Tools/ci/build_all_config.yml)
+          docker pull "$image"
+          echo "value=$image" >> "$GITHUB_OUTPUT"
         shell: bash -euo pipefail {0}
 
       # @configure: Build your project binaries
       - name: Build
         run: |
-          echo "TODO: Build your project here"
-          echo "Example: cmake -B build && cmake --build build"
+          docker run --rm -w "$PWD" -v "$PWD:$PWD" --user "$(id -u):$(id -g)" -e HOME=/tmp \
+            "${{ steps.image.outputs.value }}" make px4_fmu-v4_default
         shell: bash -euo pipefail {0}
 
       - name: Upload
@@ -67,8 +74,7 @@ jobs:
           mode: upload
           # @configure: List your binary paths/directories/globs 
           binaries: |
-                path/to/binary1
-                path/to/binary2
+                build/px4_fmu-v4_default/px4_fmu-v4_default.elf
           project: '${{ env.LOCI_PROJECT }}'
           target: ${{ steps.target.outputs.value || ''}}
           base: ${{ steps.base.outputs.value || '' }}
