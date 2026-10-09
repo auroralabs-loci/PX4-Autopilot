@@ -13,8 +13,8 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      # @configure: Set your loci project name or keep it empty if project name is derived from repo name
-      LOCI_PROJECT: ''
+      # @configure: LOCI project name, the LOCI_PROJECT variable by default
+      LOCI_PROJECT: '${{ vars.LOCI_PROJECT }}'
       LOCI_API_KEY: '${{ secrets.LOCI_API_KEY }}'
       LOCI_BACKEND_URL: '${{ vars.LOCI_BACKEND_URL }}'
       GH_TOKEN: ${{ secrets.MIRROR_REPOS_WRITE_PAT }}
